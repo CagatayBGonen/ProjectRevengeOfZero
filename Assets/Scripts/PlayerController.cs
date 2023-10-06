@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(CharacterController), typeof(PlayerInput))]
 public class PlayerController : MonoBehaviour
 {
     [SerializeField]
@@ -16,15 +16,22 @@ public class PlayerController : MonoBehaviour
     private CharacterController controller;
     private Vector3 playerVelocity; // player velocity
     private bool groundedPlayer; // return if player is grounded
-    private InputManager inputManager;
     private Transform cameraTranform;
-    
+    private PlayerInput playerInput;
+
+    private InputAction movementAction;
+    private InputAction lookAction;
+    private InputAction jumpAction;
 
     private void Start()
     {
         controller = GetComponent<CharacterController>();
-        inputManager = InputManager.Instance;
         cameraTranform = Camera.main.transform;
+        playerInput = GetComponent<PlayerInput>();
+        movementAction = playerInput.actions["Movement"];
+        lookAction = playerInput.actions["Look"];
+        jumpAction = playerInput.actions["Jump"];
+
     }
 
     void Update()
@@ -35,19 +42,16 @@ public class PlayerController : MonoBehaviour
             playerVelocity.y = 0f;
         }
 
-        Vector2 movement = inputManager.GetPlayerMovement();
-        Vector3 move = new Vector3(movement.x,0f,movement.y);
+        Vector2 input = movementAction.ReadValue<Vector2>();
+        Vector3 move = new Vector3(input.x,0f,input.y);
         move = cameraTranform.forward * move.z + cameraTranform.right * move.x;
         move.y = 0f;
         controller.Move(move * Time.deltaTime * playerSpeed);
 
-        //if (move != Vector3.zero)
-        //{
-        //    gameObject.transform.forward = move;
-        //}
+        
 
         // Changes the height position of the player..
-        if (inputManager.IsPlayerJumped() && groundedPlayer)
+        if (jumpAction.triggered && groundedPlayer)
         {
             playerVelocity.y += Mathf.Sqrt(jumpHeight * -3.0f * gravityValue);
         }
